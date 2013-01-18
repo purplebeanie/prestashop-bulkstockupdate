@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+        <module>
+            <name>pbsynchstock</name>
+            <displayName><![CDATA[Purple Beanie Bulk Stock Update]]></displayName>
+            <version><![CDATA[0.1]]></version>
+            <description><![CDATA[Helps to maintain stock levels.]]></description>
+            <author><![CDATA[Eric Fernance]]></author>
+            <tab><![CDATA[quick_bulk_update]]></tab>
+            <is_configurable>1</is_configurable>
+            <need_instance>0</need_instance>
+	<limited_countries></limited_countries>
+        </module>
