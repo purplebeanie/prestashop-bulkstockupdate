@@ -6,11 +6,13 @@ if (!defined('_PS_VERSION_'))
 class PbSynchStock extends Module
 {
 
-	var $export_stock_query = "select ps_stock_available.id_stock_available as id_stock_available,ps_stock_available.id_product,ps_product_lang.name as name,ps_attribute_lang.name as size,ps_stock_available.quantity as quantity 
+	var $export_stock_query = "select ps_stock_available.id_stock_available as id_stock_available,ps_stock_available.id_product,ps_product_lang.name as name,ps_attribute_lang.name as size,ps_stock_available.quantity as quantity,ps_product.active 
 										from ps_stock_available
 										join ps_product_lang on ps_stock_available.id_product = ps_product_lang.id_product
 										left join ps_product_attribute_combination on ps_stock_available.id_product_attribute = ps_product_attribute_combination.id_product_attribute
-										left join ps_attribute_lang on ps_product_attribute_combination.id_attribute = ps_attribute_lang.id_attribute";
+										left join ps_attribute_lang on ps_product_attribute_combination.id_attribute = ps_attribute_lang.id_attribute
+										left join ps_product on ps_stock_available.id_product = ps_product.id_product
+										having ps_product.active = 1";
 
 	public function __construct()
 	{
