@@ -1,7 +1,7 @@
 <?php
 
 if (!defined('_PS_VERSION_'))
-	exist;
+	exit;
 
 class PbSynchStock extends Module
 {
@@ -47,7 +47,7 @@ class PbSynchStock extends Module
 		$this->_html .= '<h2>'.$this->displayName.'</h2>';
 		$this->_html .= '<p>'.$this->description.'</p>';
 
-		if (isset($_POST['action']) && in_array($_POST['action'],array('downloaded_master_stock_list','update_stock_values')))
+		if (isset($_POST['action']) && in_array($_POST['action'],array('downloaded_master_stock_list','update_stock_values','upload_stock_levels')))
 			$this->_html .= $this->_post_process($_POST['action']);
 		else 
 			$this->_html .= $this->_get_export_form();
@@ -70,6 +70,14 @@ class PbSynchStock extends Module
 						</table>
 						<input type="hidden" name="action" value="downloaded_master_stock_list"/>
 					</form>';
+		$html .= '<hr/><h3>Or Maybe you want to update some stock levels???</h3>';
+		$html .= '<form action="" method="POST" enctype="multipart/form-data">';
+		$html .= '<table border="0">
+						<tr><td><input type="file" name="stock" value=""/></td></tr>
+						<tr><td align="center"><input type="submit" class="button" name="get_master_stock_list" value="'.$this->l('Uplodate stock file').'"/></td></tr>
+					</table>
+					<input type="hidden" name="action" value="upload_stock_levels"/></form>';
+
 
 		return $html;
 
@@ -83,32 +91,47 @@ class PbSynchStock extends Module
 
 	private function _post_process($action)
 	{
-		if ($action == 'downloaded_master_stock_list') {
+		switch($action) {
 
-			$html = '<form action="'.Tools::safeOutput($_SERVER['REQUEST_URI']).'" method="POST">';
-			$html .= '<table border="0">';
-			if ($_POST['action'] == "downloaded_master_stock_list") {
-				$db = Db::getInstance();
-				if ($results = $db->executeS($this->export_stock_query))
-					foreach ($results as $row)
-						$html .= '<tr><th>'.$row['name'].' - '.$row['size'].'</th><td> has stock of 
-											<input type="text" size="4" name="stock_available[]" value="'.$row['quantity'].'"/>
-											<input type="text" size="4" name="id_stock_available[]" value="'.$row['id_stock_available'].'"/></td></tr>';
+			case 'downloaded_master_stock_list':
+				$html = '<form action="'.Tools::safeOutput($_SERVER['REQUEST_URI']).'" method="POST">';
+				$html .= '<table border="0">';
+				if ($_POST['action'] == "downloaded_master_stock_list") {
+					$db = Db::getInstance();
+					if ($results = $db->executeS($this->export_stock_query))
+						foreach ($results as $row)
+							$html .= '<tr><th>'.$row['name'].' - '.$row['size'].'</th><td> has stock of 
+												<input type="text" size="4" name="stock_available[]" value="'.$row['quantity'].'"/>
+												<input type="text" size="4" name="id_stock_available[]" value="'.$row['id_stock_available'].'"/></td></tr>';
 				
-				$html .='</table>';
-				$html .='<input type="hidden" name="action" value="update_stock_values"/>';
-				$html .='<input type="submit" class="button" name="" value="'.$this->l('Update Stock Items').'"/>';
-				$html .='</form>';
-				return $html;
-			}
-		} else {
-			$db = Db::getInstance();
-			foreach ($_POST['id_stock_available'] as $i=>$stock_available) {
-				$db->update('stock_available',array('quantity'=>(int)$_POST['stock_available'][$i]), $where = 'id_stock_available = '.(int)$stock_available);
-			}
+					$html .='</table>';
+					$html .='<input type="hidden" name="action" value="update_stock_values"/>';
+					$html .='<input type="submit" class="button" name="" value="'.$this->l('Submit').'"/>';
+					$html .='</form>';
+				}
+			break;
+			case 'update_stock_values':
+				$db = Db::getInstance();
+				foreach ($_POST['id_stock_available'] as $i=>$stock_available) {
+					$db->update('stock_available',array('quantity'=>(int)$_POST['stock_available'][$i]), $where = 'id_stock_available = '.(int)$stock_available);
+				}
 
-			return $this->_get_export_form();
+				$html = $this->_get_export_form();
+			break;
+			case 'upload_stock_levels':
+				//user is uploading a doc so we need to grab it from temporary files and process accordingly....
+				$db = Db::getInstance();
+				$fh = fopen($_FILES['stock']['tmp_name'],'r');
+				$updatedItems = 0;
+				while ($row = fgetcsv($fh)) {
+					$db->update('stock_available',array('quantity'=>(int)$row[2]), $where = 'id_stock_available = '.(int)$row[1]);
+					$updatedItems++;
+				}
+				$html = $updatedItems.' items have been updated.';
+			break;
 		}
+
+		return $html;
 
 	}
 }
